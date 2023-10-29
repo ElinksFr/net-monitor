@@ -1,5 +1,4 @@
 #include <linux/bpf.h>
-#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 
 struct
