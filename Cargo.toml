@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 libbpf-rs = "0.21.2"
 procfs = "0.15.1"
+
+[build-dependencies]
+libbpf-cargo = "0.21.2"

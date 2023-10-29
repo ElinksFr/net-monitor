@@ -6,5 +6,5 @@ Reproduce some of the functionality of nethogs with rust and eBPF
 
 Ubuntu
 ```console
-apt install clang libelf1 libelf-dev zlib1g-dev
+apt install clang gcc-multilib libelf1 libelf-dev zlib1g-dev
 ```
