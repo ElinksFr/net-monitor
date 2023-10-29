@@ -1,5 +1,6 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
 
 struct
 {
@@ -10,9 +11,10 @@ struct
 } packet_stats SEC(".maps");
 
 char __license[] SEC("license") = "GPL";
+#define TC_ACT_OK 0
 
-SEC("xdp")
-int xdp_pass(struct xdp_md *ctx)
+SEC("tc")
+int packet_size(struct __sk_buff *ctx)
 {
     void *data = (void *)(long)ctx->data;
     void *data_end = (void *)(long)ctx->data_end;
@@ -31,5 +33,5 @@ int xdp_pass(struct xdp_md *ctx)
         bpf_map_update_elem(&packet_stats, &pid, &pkt_sz, BPF_NOEXIST);
     }
 
-    return XDP_PASS;
+    return TC_ACT_OK;
 }
