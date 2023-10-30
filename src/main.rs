@@ -17,13 +17,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    process_by_pid
-        .iter()
-        .take(15)
-        .for_each(|(_pid, process)| match process.stat() {
-            Ok(stat) => println!("{} | {}", process.pid, stat.comm),
-            Err(_) => (),
-        });
+    // process_by_pid
+    //     .iter()
+    //     .take(15)
+    //     .for_each(|(_pid, process)| match process.stat() {
+    //         Ok(stat) => println!("{} | {}", process.pid, stat.comm),
+    //         Err(_) => (),
+    //     });
 
     let builder = packet_size::PacketSizeSkelBuilder::default();
     let opened_skel = builder.open()?;
@@ -33,17 +33,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
 
-    sleep(Duration::from_secs(3));
+    sleep(Duration::from_secs(10));
 
     packet_stats.keys().into_iter().for_each(|key| {
-        let pid = i32::from_be_bytes([key[0], key[1], key[2], key[3]]);
-        let tmp = packet_stats.lookup(&key, MapFlags::EXIST).unwrap().unwrap();
-        let bytes_received = u64::from_be_bytes([
-            tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7],
-        ]);
+        let pid = i32::from_le_bytes([key[0], key[1], key[2], key[3]]);
+
+        let tmp = packet_stats
+            .lookup(&key, MapFlags::ANY)
+            .expect("err")
+            .expect("option");
+        let bytes_received = i32::from_le_bytes([tmp[0], tmp[1], tmp[2], tmp[3]]);
+
         match process_by_pid.get(&pid) {
             Some(process) => match process.stat() {
-                Ok(stat) => println!("{} | {} | {}", process.pid, stat.comm, bytes_received),
+                Ok(stat) => println!("{} | {} | {} bytes", process.pid, stat.comm, bytes_received),
                 Err(_) => (),
             },
             None => println!("Process Not Found"),
