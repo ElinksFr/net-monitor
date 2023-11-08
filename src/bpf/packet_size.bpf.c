@@ -21,7 +21,6 @@ void increate_received_packet_counter(__u32 pid, int size_of_new_packets)
 
     if (value)
     {
-        *value += size_of_new_packets;
         int total_size = (*value) + size_of_new_packets;
         bpf_map_update_elem(&packet_stats, &pid, &total_size, BPF_EXIST);
     }
