@@ -10,7 +10,6 @@ mod packet_size;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let process_by_pid: HashMap<i32, Process> = procfs::process::all_processes()?
-        .into_iter()
         .map(|process_result| {
             let process = process_result.unwrap();
             (process.pid, process)
@@ -34,9 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
 
-    sleep(Duration::from_secs(5));
+    let sample_over = Duration::from_secs(5);
+    sleep(sample_over);
 
-    packet_stats.keys().into_iter().for_each(|key| {
+    packet_stats.keys().for_each(|key| {
         let pid = i32::from_le_bytes([key[0], key[1], key[2], key[3]]);
 
         let tmp = packet_stats
@@ -44,14 +44,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("err")
             .expect("option");
         let bytes_received = i32::from_le_bytes([tmp[0], tmp[1], tmp[2], tmp[3]]);
+        let bytes_seconds = bytes_received as u64 / sample_over.as_secs();
 
         match process_by_pid.get(&pid) {
             Some(process) => match process.stat() {
                 Ok(stat) => println!(
-                    "{} | {} | {}",
+                    "{} | {} | {}/s",
                     process.pid,
                     stat.comm,
-                    Byte::from_bytes(bytes_received as u128).get_appropriate_unit(true)
+                    Byte::from_bytes(bytes_seconds as u128).get_appropriate_unit(true)
                 ),
                 Err(_) => (),
             },
