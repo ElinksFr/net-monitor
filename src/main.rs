@@ -1,10 +1,10 @@
-use std::{collections::HashMap, error::Error, thread::sleep, time::Duration};
-
+use byte_unit::Byte;
 use libbpf_rs::{
     skel::{OpenSkel, SkelBuilder},
     MapFlags,
 };
 use procfs::process::Process;
+use std::{collections::HashMap, error::Error, thread::sleep, time::Duration};
 #[path = "bpf/.output/packet_size.skel.rs"]
 mod packet_size;
 
@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
 
-    sleep(Duration::from_secs(10));
+    sleep(Duration::from_secs(5));
 
     packet_stats.keys().into_iter().for_each(|key| {
         let pid = i32::from_le_bytes([key[0], key[1], key[2], key[3]]);
@@ -46,7 +46,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         match process_by_pid.get(&pid) {
             Some(process) => match process.stat() {
-                Ok(stat) => println!("{} | {} | {} bytes", process.pid, stat.comm, bytes_received),
+                Ok(stat) => println!(
+                    "{} | {} | {}",
+                    process.pid,
+                    stat.comm,
+                    Byte::from_bytes(bytes_received as u128).get_appropriate_unit(true)
+                ),
                 Err(_) => (),
             },
             None => println!("Process Not Found"),
