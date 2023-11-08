@@ -28,7 +28,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let builder = packet_size::PacketSizeSkelBuilder::default();
     let opened_skel = builder.open()?;
     let mut skel = opened_skel.load()?;
-    let _link = skel.progs_mut().packet_size().attach()?;
+    let _link = skel.progs_mut().tcp_received_packet_size().attach()?;
+    let _link = skel.progs_mut().udp_received_packet_size().attach()?;
 
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
