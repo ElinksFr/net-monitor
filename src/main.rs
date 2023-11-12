@@ -37,14 +37,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     sleep(sample_over);
 
     packet_stats.keys().for_each(|key| {
-        let pid = i32::from_le_bytes([key[0], key[1], key[2], key[3]]);
-
         let tmp = packet_stats
             .lookup(&key, MapFlags::ANY)
             .expect("err")
             .expect("option");
-        let bytes_received = i32::from_le_bytes([tmp[0], tmp[1], tmp[2], tmp[3]]);
+        let bytes_received =
+            i32::from_le_bytes(tmp.try_into().expect("failed to convert the value to i32"));
         let bytes_seconds = bytes_received as u64 / sample_over.as_secs();
+        let pid = i32::from_le_bytes(key.try_into().expect("failed to convert key to i32"));
 
         match process_by_pid.get(&pid) {
             Some(process) => match process.stat() {
