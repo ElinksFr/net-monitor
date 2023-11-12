@@ -1,12 +1,12 @@
+use bandwidth_tracker::state::BandwidthTracker;
 use byte_unit::Byte;
-use libbpf_rs::{
-    skel::{OpenSkel, SkelBuilder},
-    MapFlags,
-};
+use libbpf_rs::skel::{OpenSkel, SkelBuilder};
 use procfs::process::Process;
 use std::{collections::HashMap, error::Error, thread::sleep, time::Duration};
 #[path = "bpf/.output/packet_size.skel.rs"]
 mod packet_size;
+
+mod bandwidth_tracker;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let process_by_pid: HashMap<i32, Process> = procfs::process::all_processes()?
@@ -15,14 +15,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             (process.pid, process)
         })
         .collect();
-
-    // process_by_pid
-    //     .iter()
-    //     .take(15)
-    //     .for_each(|(_pid, process)| match process.stat() {
-    //         Ok(stat) => println!("{} | {}", process.pid, stat.comm),
-    //         Err(_) => (),
-    //     });
 
     let builder = packet_size::PacketSizeSkelBuilder::default();
     let opened_skel = builder.open()?;
@@ -33,31 +25,35 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
 
-    let sample_over = Duration::from_secs(5);
-    sleep(sample_over);
+    let tick_rate = Duration::from_millis(200);
+    let average_over = Duration::from_secs(2);
 
-    packet_stats.keys().for_each(|key| {
-        let tmp = packet_stats
-            .lookup(&key, MapFlags::ANY)
-            .expect("err")
-            .expect("option");
-        let bytes_received =
-            i32::from_le_bytes(tmp.try_into().expect("failed to convert the value to i32"));
-        let bytes_seconds = bytes_received as u64 / sample_over.as_secs();
-        let pid = i32::from_le_bytes(key.try_into().expect("failed to convert key to i32"));
+    let mut tracker = BandwidthTracker::new();
+    loop {
+        tracker.refresh_tick(packet_stats);
+        tracker
+            .get_throughput_over_duration(average_over)
+            .for_each(|(pid, bytes_per_second)| {
+                print_process_throughput_info(bytes_per_second, &process_by_pid, pid);
+            });
+        sleep(tick_rate);
+        print!("{}[2J", 27 as char);
+    }
+}
 
-        match process_by_pid.get(&pid) {
-            Some(process) => match process.stat() {
-                Ok(stat) => println!(
-                    "{} | {} | {}/s",
-                    process.pid,
-                    stat.comm,
-                    Byte::from_bytes(bytes_seconds as u128).get_appropriate_unit(true)
-                ),
-                Err(_) => (),
-            },
-            None => println!("Process Not Found"),
-        }
-    });
-    Ok(())
+fn print_process_throughput_info(
+    bytes_per_second: u64,
+    process_by_pid: &HashMap<i32, Process>,
+    pid: i32,
+) {
+    let pretty_bytes = Byte::from_bytes(bytes_per_second as u128).get_appropriate_unit(true);
+    match process_by_pid.get(&pid) {
+        Some(process) => match process.stat() {
+            Ok(stat) => {
+                println!("{} | {} | {}/s", process.pid, stat.comm, pretty_bytes)
+            }
+            Err(_) => (),
+        },
+        None => println!("Process Not Found"),
+    }
 }
