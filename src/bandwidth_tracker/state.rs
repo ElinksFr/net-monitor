@@ -40,6 +40,15 @@ impl BandwidthTracker {
         });
     }
 
+    pub fn get_nbr_of_bytes_since_monitoring_started(&self, pid: PID) -> u64 {
+        self.over_time_per_pid
+            .get(&pid)
+            .map(|ticks| ticks.last())
+            .flatten()
+            .map(|tick| tick.0)
+            .unwrap_or(0) as u64
+    }
+
     pub fn get_throughput_over_duration<'a>(
         &'a self,
         duration: Duration,

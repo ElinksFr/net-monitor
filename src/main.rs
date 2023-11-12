@@ -34,7 +34,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracker
             .get_throughput_over_duration(average_over)
             .for_each(|(pid, bytes_per_second)| {
-                print_process_throughput_info(bytes_per_second, &process_by_pid, pid);
+                let bytes_since_inception = tracker.get_nbr_of_bytes_since_monitoring_started(pid);
+                print_process_throughput_info(
+                    bytes_per_second,
+                    bytes_since_inception,
+                    &process_by_pid,
+                    pid,
+                );
             });
         sleep(tick_rate);
         print!("{}[2J", 27 as char);
@@ -43,14 +49,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn print_process_throughput_info(
     bytes_per_second: u64,
+    bytes_since_inception: u64,
     process_by_pid: &HashMap<i32, Process>,
     pid: i32,
 ) {
-    let pretty_bytes = Byte::from_bytes(bytes_per_second as u128).get_appropriate_unit(true);
+    let pretty_bytes_troughput =
+        Byte::from_bytes(bytes_per_second as u128).get_appropriate_unit(true);
+    let pretty_bytes_total =
+        Byte::from_bytes(bytes_since_inception as u128).get_appropriate_unit(true);
     match process_by_pid.get(&pid) {
         Some(process) => match process.stat() {
             Ok(stat) => {
-                println!("{} | {} | {}/s", process.pid, stat.comm, pretty_bytes)
+                println!(
+                    "{} | {} | {}/s | {}",
+                    process.pid, stat.comm, pretty_bytes_troughput, pretty_bytes_total
+                )
             }
             Err(_) => (),
         },
