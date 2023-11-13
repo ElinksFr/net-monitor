@@ -24,10 +24,13 @@ impl BandwidthTracker {
                 .lookup(&key, MapFlags::ANY)
                 .expect("err")
                 .expect("option");
-            let bytes_received = NbrOfBytesSinceInception::from_le_bytes(
-                tmp.try_into().expect("failed to convert the value to i32"),
+
+            let bytes_received = NbrOfBytesSinceInception::from_ne_bytes(
+                tmp[..4]
+                    .try_into()
+                    .expect("failed to convert the value to i32"),
             );
-            let pid = i32::from_le_bytes(key.try_into().expect("failed to convert key to i32"));
+            let pid = i32::from_ne_bytes(key.try_into().expect("failed to convert key to i32"));
 
             match self.over_time_per_pid.entry(pid) {
                 std::collections::hash_map::Entry::Occupied(mut entry) => {
