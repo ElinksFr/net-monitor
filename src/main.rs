@@ -33,6 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracker.refresh_tick(packet_stats);
         tracker
             .get_throughput_over_duration(average_over)
+            .filter(|(_pid, throughput)| *throughput != 0)
             .for_each(|(pid, bytes_per_second)| {
                 let bytes_since_inception = tracker.get_nbr_of_bytes_since_monitoring_started(pid);
                 print_process_throughput_info(

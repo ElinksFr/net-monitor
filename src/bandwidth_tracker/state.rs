@@ -55,24 +55,21 @@ impl BandwidthTracker {
     ) -> impl Iterator<Item = (PID, u64)> + 'a {
         let current_time = SystemTime::now();
 
-        self.over_time_per_pid
-            .iter()
-            .map(move |(pid, ticks)| {
-                let mut ticks_in_window = ticks
-                    .iter()
-                    .rev()
-                    .take_while(|(_, record_time)| *record_time + duration > current_time);
+        self.over_time_per_pid.iter().map(move |(pid, ticks)| {
+            let mut ticks_in_window = ticks
+                .iter()
+                .rev()
+                .take_while(|(_, record_time)| *record_time + duration > current_time);
 
-                let most_recent_tick = ticks_in_window.next();
-                let oldest_tick = ticks_in_window.last();
+            let most_recent_tick = ticks_in_window.next();
+            let oldest_tick = ticks_in_window.last();
 
-                match (most_recent_tick, oldest_tick) {
-                    (Some((b1, _)), Some((b2, _))) => (*pid, (b1 - b2) as u64 / duration.as_secs()),
-                    (None, None) => (*pid, 0),
-                    (None, Some(_)) => (*pid, 0),
-                    (Some(_), None) => (*pid, 0),
-                }
-            })
-            .filter(|(_pid, throughput)| *throughput != 0)
+            match (most_recent_tick, oldest_tick) {
+                (Some((b1, _)), Some((b2, _))) => (*pid, (b1 - b2) as u64 / duration.as_secs()),
+                (None, None) => (*pid, 0),
+                (None, Some(_)) => (*pid, 0),
+                (Some(_), None) => (*pid, 0),
+            }
+        })
     }
 }
