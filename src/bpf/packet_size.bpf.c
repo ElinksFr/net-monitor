@@ -21,7 +21,7 @@ char __license[] SEC("license") = "GPL";
 #define TC_ACT_OK 0
 #define UDP_ACT_OK 0
 
-void increate_received_packet_counter(u32 pid, int size_of_new_packets)
+void increment_received_packet_counter(u32 pid, int size_of_new_packets)
 {
     track *value = bpf_map_lookup_elem(&packet_stats, &pid);
 
@@ -36,11 +36,26 @@ void increate_received_packet_counter(u32 pid, int size_of_new_packets)
     }
 }
 
+void increment_send_packet_counter(u32 pid, int size_of_new_packets)
+{
+    track *value = bpf_map_lookup_elem(&packet_stats, &pid);
+
+    if (value)
+    {
+        value->send += size_of_new_packets;
+    }
+    else
+    {
+        track tracked = {0, size_of_new_packets};
+        bpf_map_update_elem(&packet_stats, &pid, &tracked, BPF_ANY);
+    }
+}
+
 SEC("kretprobe/tcp_recvmsg")
 int BPF_KRETPROBE(tcp_received_packet_size, int ret)
 {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
-    increate_received_packet_counter(pid, ret);
+    increment_received_packet_counter(pid, ret);
 
     return TC_ACT_OK;
 }
@@ -49,7 +64,25 @@ SEC("kretprobe/udp_recvmsg")
 int BPF_KRETPROBE(udp_received_packet_size, int ret)
 {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
-    increate_received_packet_counter(pid, ret);
+    increment_received_packet_counter(pid, ret);
+
+    return UDP_ACT_OK;
+}
+
+SEC("kretprobe/tcp_sendmsg")
+int BPF_KRETPROBE(tcp_send_packet_size, int ret)
+{
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    increment_send_packet_counter(pid, ret);
+
+    return TC_ACT_OK;
+}
+
+SEC("kretprobe/udp_sendmsg")
+int BPF_KRETPROBE(udp_send_packet_size, int ret)
+{
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    increment_send_packet_counter(pid, ret);
 
     return UDP_ACT_OK;
 }
