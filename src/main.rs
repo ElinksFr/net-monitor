@@ -1,12 +1,14 @@
 use bandwidth_tracker::state::BandwidthTracker;
+use bpf::probs::LoadedProb;
 use byte_unit::Byte;
 use libbpf_rs::skel::{OpenSkel, SkelBuilder};
 use procfs::process::Process;
 use std::{collections::HashMap, error::Error, thread::sleep, time::Duration};
-#[path = "bpf/.output/packet_size.skel.rs"]
-mod packet_size;
 
 mod bandwidth_tracker;
+mod bpf;
+#[path = "bpf/.output/packet_size.skel.rs"]
+mod packet_size;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let process_by_pid: HashMap<i32, Process> = procfs::process::all_processes()?
@@ -19,10 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let builder = packet_size::PacketSizeSkelBuilder::default();
     let opened_skel = builder.open()?;
     let mut skel = opened_skel.load()?;
-    let _link = skel.progs_mut().tcp_received_packet_size().attach()?;
-    let _link = skel.progs_mut().tcp_send_packet_size().attach()?;
-    let _link = skel.progs_mut().udp_received_packet_size().attach()?;
-    let _link = skel.progs_mut().udp_send_packet_size().attach()?;
+    let _probs = LoadedProb::load_ebpf_monitoring_probs(&mut skel)?;
 
     let map_collection = skel.maps();
     let packet_stats = map_collection.packet_stats();
