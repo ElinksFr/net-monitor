@@ -35,8 +35,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracker
             .get_throughput_over_duration(average_over)
             .for_each(|(pid, received, send)| {
-                let bytes_since_inception =
-                    tracker.get_nbr_of_bytes_received_since_monitoring_started(pid);
+                let bytes_since_inception = tracker
+                    .get_nbr_of_bytes_received_since_monitoring_started(pid)
+                    .unwrap_or(0);
                 print_process_throughput_info(
                     received,
                     send,

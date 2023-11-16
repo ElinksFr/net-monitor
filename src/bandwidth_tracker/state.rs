@@ -59,13 +59,22 @@ impl BandwidthTracker {
         });
     }
 
-    pub fn get_nbr_of_bytes_received_since_monitoring_started(&self, pid: PID) -> u64 {
+    /// Returns `None` when the process did not interacted with the network since the monitoring started
+    pub fn get_nbr_of_bytes_received_since_monitoring_started(&self, pid: PID) -> Option<u64> {
         self.over_time_per_pid
             .get(&pid)
             .map(|ticks| ticks.last())
             .flatten()
-            .map(|tick| tick.received)
-            .unwrap_or(0) as u64
+            .map(|tick| tick.received as u64)
+    }
+
+    /// Returns `None` when the process did not interacted with the network since the monitoring started
+    pub fn get_nbr_of_bytes_send_since_monitoring_started(&self, pid: PID) -> Option<u64> {
+        self.over_time_per_pid
+            .get(&pid)
+            .map(|ticks| ticks.last())
+            .flatten()
+            .map(|tick| tick.send as u64)
     }
 
     pub fn get_throughput_over_duration<'a>(
