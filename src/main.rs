@@ -1,4 +1,4 @@
-use bandwidth_tracker::state::BandwidthTracker;
+use bandwidth_tracker::tracker::BandwidthTracker;
 use bpf::probs::LoadedProb;
 use byte_unit::Byte;
 use crossterm::{
