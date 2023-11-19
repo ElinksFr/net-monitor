@@ -51,12 +51,12 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
             "total bytes received",
         ]))
         .widths(&[
-            Constraint::Max(20),
-            Constraint::Max(20),
-            Constraint::Max(20),
-            Constraint::Max(20),
-            Constraint::Max(20),
-            Constraint::Max(20),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
         ]);
 
     frame.render_widget(table, frame.size());
