@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use byte_unit::Byte;
 use ratatui::{
     prelude::Constraint,
     widgets::{Row, Table},
@@ -17,26 +16,18 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
             let process_name = state.process_by_pid.get(&pid).unwrap().stat().unwrap().comm;
             let total_bytes_received = tracker
                 .get_nbr_of_bytes_received_since_monitoring_started(pid)
-                .unwrap_or(0);
+                .unwrap_or_default();
             let total_bytes_send = tracker
                 .get_nbr_of_bytes_send_since_monitoring_started(pid)
-                .unwrap_or(0);
-            let pretty_bytes_troughput_received =
-                Byte::from_bytes(received as u128).get_appropriate_unit(true);
-            let pretty_bytes_troughput_send =
-                Byte::from_bytes(send as u128).get_appropriate_unit(true);
-            let pretty_bytes_total_received: byte_unit::AdjustedByte =
-                Byte::from_bytes(total_bytes_received as u128).get_appropriate_unit(true);
-            let pretty_bytes_total_send: byte_unit::AdjustedByte =
-                Byte::from_bytes(total_bytes_send as u128).get_appropriate_unit(true);
+                .unwrap_or_default();
 
             Row::new([
                 pid.to_string(),
                 process_name.to_string(),
-                pretty_bytes_troughput_send.to_string(),
-                pretty_bytes_troughput_received.to_string(),
-                pretty_bytes_total_send.to_string(),
-                pretty_bytes_total_received.to_string(),
+                send.to_string(),
+                received.to_string(),
+                total_bytes_send.to_string(),
+                total_bytes_received.to_string(),
             ])
         })
         .collect();

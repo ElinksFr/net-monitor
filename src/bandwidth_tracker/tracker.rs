@@ -2,12 +2,13 @@ use std::time::SystemTime;
 use std::{collections::HashMap, time::Duration};
 
 use libbpf_rs::{Map, MapFlags};
+
+use super::bytes::{BytesPerSecond, NumberOfBytes};
 type PID = i32;
-type NbrOfBytesSinceInception = i32;
 
 struct TrackingTick {
-    received: NbrOfBytesSinceInception,
-    send: NbrOfBytesSinceInception,
+    received: NumberOfBytes,
+    send: NumberOfBytes,
     at: SystemTime,
 }
 
@@ -33,16 +34,18 @@ impl BandwidthTracker {
                 .expect("err")
                 .expect("option");
 
-            let bytes_received = NbrOfBytesSinceInception::from_ne_bytes(
+            let bytes_received = i32::from_ne_bytes(
                 tmp[..4]
                     .try_into()
                     .expect("failed to convert the value to i32"),
-            );
-            let bytes_send = NbrOfBytesSinceInception::from_ne_bytes(
+            )
+            .into();
+            let bytes_send = i32::from_ne_bytes(
                 tmp[4..]
                     .try_into()
                     .expect("failed to convert the value to i32"),
-            );
+            )
+            .into();
             let pid = i32::from_ne_bytes(key.try_into().expect("failed to convert key to i32"));
 
             let tick = TrackingTick {
@@ -64,27 +67,31 @@ impl BandwidthTracker {
     }
 
     /// Returns `None` when the process did not interacted with the network since the monitoring started
-    pub fn get_nbr_of_bytes_received_since_monitoring_started(&self, pid: PID) -> Option<u64> {
+    pub fn get_nbr_of_bytes_received_since_monitoring_started(
+        &self,
+        pid: PID,
+    ) -> Option<NumberOfBytes> {
         self.over_time_per_pid
             .get(&pid)
-            .map(|ticks| ticks.last())
-            .flatten()
-            .map(|tick| tick.received as u64)
+            .and_then(|ticks| ticks.last())
+            .map(|tick| tick.received)
     }
 
     /// Returns `None` when the process did not interacted with the network since the monitoring started
-    pub fn get_nbr_of_bytes_send_since_monitoring_started(&self, pid: PID) -> Option<u64> {
+    pub fn get_nbr_of_bytes_send_since_monitoring_started(
+        &self,
+        pid: PID,
+    ) -> Option<NumberOfBytes> {
         self.over_time_per_pid
             .get(&pid)
-            .map(|ticks| ticks.last())
-            .flatten()
-            .map(|tick| tick.send as u64)
+            .and_then(|ticks| ticks.last())
+            .map(|tick| tick.send)
     }
 
-    pub fn get_throughput_over_duration<'a>(
-        &'a self,
+    pub fn get_throughput_over_duration(
+        &self,
         duration: Duration,
-    ) -> impl Iterator<Item = (PID, u64, u64)> + 'a {
+    ) -> impl Iterator<Item = (PID, BytesPerSecond, BytesPerSecond)> + '_ {
         let current_time = SystemTime::now();
 
         self.over_time_per_pid
@@ -104,10 +111,10 @@ impl BandwidthTracker {
                 match (most_recent_tick, oldest_tick) {
                     (Some(t1), Some(t2)) => (
                         *pid,
-                        (t1.received - t2.received) as u64 / duration.as_secs(),
-                        (t1.send - t2.send) as u64 / duration.as_secs(),
+                        BytesPerSecond::new(t1.received - t2.received, duration),
+                        BytesPerSecond::new(t1.send - t2.send, duration),
                     ),
-                    _ => (*pid, 0, 0),
+                    _ => (*pid, BytesPerSecond::default(), BytesPerSecond::default()),
                 }
             })
     }
