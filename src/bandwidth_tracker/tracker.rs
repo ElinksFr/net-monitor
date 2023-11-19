@@ -12,12 +12,14 @@ struct TrackingTick {
 }
 
 pub struct BandwidthTracker {
+    last_tick: SystemTime,
     over_time_per_pid: HashMap<PID, Vec<TrackingTick>>,
 }
 
 impl BandwidthTracker {
     pub fn new() -> BandwidthTracker {
         BandwidthTracker {
+            last_tick: SystemTime::now(),
             over_time_per_pid: HashMap::new(),
         }
     }
@@ -57,6 +59,8 @@ impl BandwidthTracker {
                 }
             }
         });
+
+        self.last_tick = current_time;
     }
 
     /// Returns `None` when the process did not interacted with the network since the monitoring started
@@ -83,23 +87,28 @@ impl BandwidthTracker {
     ) -> impl Iterator<Item = (PID, u64, u64)> + 'a {
         let current_time = SystemTime::now();
 
-        self.over_time_per_pid.iter().map(move |(pid, ticks)| {
-            let mut ticks_in_window = ticks
-                .iter()
-                .rev()
-                .take_while(|tick| tick.at + duration > current_time);
+        self.over_time_per_pid
+            .iter()
+            .filter(|(_pid, ticks)| {
+                ticks.last().expect("size whould at least be one").at == self.last_tick
+            })
+            .map(move |(pid, ticks)| {
+                let mut ticks_in_window = ticks
+                    .iter()
+                    .rev()
+                    .take_while(|tick| tick.at + duration > current_time);
 
-            let most_recent_tick = ticks_in_window.next();
-            let oldest_tick = ticks_in_window.last();
+                let most_recent_tick = ticks_in_window.next();
+                let oldest_tick = ticks_in_window.last();
 
-            match (most_recent_tick, oldest_tick) {
-                (Some(t1), Some(t2)) => (
-                    *pid,
-                    (t1.received - t2.received) as u64 / duration.as_secs(),
-                    (t1.send - t2.send) as u64 / duration.as_secs(),
-                ),
-                _ => (*pid, 0, 0),
-            }
-        })
+                match (most_recent_tick, oldest_tick) {
+                    (Some(t1), Some(t2)) => (
+                        *pid,
+                        (t1.received - t2.received) as u64 / duration.as_secs(),
+                        (t1.send - t2.send) as u64 / duration.as_secs(),
+                    ),
+                    _ => (*pid, 0, 0),
+                }
+            })
     }
 }
