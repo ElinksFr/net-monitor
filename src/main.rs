@@ -1,3 +1,5 @@
+#![feature(maybe_uninit_uninit_array)]
+
 use bpf::probs::LoadedProb;
 use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},

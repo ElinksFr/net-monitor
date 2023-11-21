@@ -4,6 +4,7 @@ use std::{collections::HashMap, time::Duration};
 use libbpf_rs::{Map, MapFlags};
 
 use super::bytes::{BytesPerSecond, NumberOfBytes};
+use super::history_buffer::HistoryBuffer;
 type PID = i32;
 
 struct TrackingTick {
@@ -14,7 +15,7 @@ struct TrackingTick {
 
 pub struct BandwidthTracker {
     last_tick: SystemTime,
-    over_time_per_pid: HashMap<PID, Vec<TrackingTick>>,
+    over_time_per_pid: HashMap<PID, HistoryBuffer<255, TrackingTick>>,
 }
 
 impl BandwidthTracker {
@@ -58,7 +59,7 @@ impl BandwidthTracker {
                     entry.get_mut().push(tick);
                 }
                 std::collections::hash_map::Entry::Vacant(vacant) => {
-                    vacant.insert(vec![tick]);
+                    vacant.insert(HistoryBuffer::init(tick));
                 }
             }
         });
@@ -73,8 +74,7 @@ impl BandwidthTracker {
     ) -> Option<NumberOfBytes> {
         self.over_time_per_pid
             .get(&pid)
-            .and_then(|ticks| ticks.last())
-            .map(|tick| tick.received)
+            .map(|ticks| ticks.last().received)
     }
 
     /// Returns `None` when the process did not interacted with the network since the monitoring started
@@ -84,8 +84,7 @@ impl BandwidthTracker {
     ) -> Option<NumberOfBytes> {
         self.over_time_per_pid
             .get(&pid)
-            .and_then(|ticks| ticks.last())
-            .map(|tick| tick.send)
+            .map(|ticks| ticks.last().send)
     }
 
     pub fn get_throughput_over_duration(
@@ -96,12 +95,10 @@ impl BandwidthTracker {
 
         self.over_time_per_pid
             .iter()
-            .filter(|(_pid, ticks)| {
-                ticks.last().expect("size whould at least be one").at == self.last_tick
-            })
+            .filter(|(_pid, ticks)| ticks.last().at == self.last_tick)
             .map(move |(pid, ticks)| {
                 let mut ticks_in_window = ticks
-                    .iter()
+                    .into_iter()
                     .rev()
                     .take_while(|tick| tick.at + duration > current_time);
 

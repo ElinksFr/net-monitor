@@ -37,7 +37,7 @@ impl ToString for NumberOfBytes {
     fn to_string(&self) -> String {
         format!(
             "{}",
-            Byte::from_bytes(self.0 as u128).get_appropriate_unit(true)
+            Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
         )
     }
 }
@@ -52,7 +52,7 @@ impl ToString for BytesPerSecond {
     fn to_string(&self) -> String {
         format!(
             "{}/s",
-            Byte::from_bytes(self.0 as u128).get_appropriate_unit(true)
+            Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
         )
     }
 }
