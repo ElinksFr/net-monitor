@@ -17,10 +17,6 @@ mod packet_size;
 mod tui;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-
     let opened_skel = packet_size::PacketSizeSkelBuilder::default().open()?;
     let mut skel = opened_skel.load()?;
     let _probs = LoadedProb::load_ebpf_monitoring_probs(&mut skel)?;
@@ -30,6 +26,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut state_model = Model::init(packet_stats)?;
 
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     loop {
         terminal.draw(|frame| draw_state(frame, &state_model))?;
         if crossterm::event::poll(std::time::Duration::from_millis(250))?

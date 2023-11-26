@@ -90,8 +90,15 @@ int BPF_KRETPROBE(udp_send_packet_size, int ret)
 SEC("tp/sched/sched_process_exit")
 int stop_tracking_on_process_exit(struct trace_event_raw_sched_process_template *ctx)
 {
-    pid_t pid = bpf_get_current_pid_tgid() >> 32;
-    bpf_map_delete_elem(&packet_stats, &pid);
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    pid_t pid = pid_tgid >> 32;
+    pid_t tgid = (pid_t)pid_tgid;
+
+    if (pid == tgid)
+    {
+
+        bpf_map_delete_elem(&packet_stats, &pid);
+    }
 
     return 0;
 }
