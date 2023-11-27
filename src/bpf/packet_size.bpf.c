@@ -23,6 +23,11 @@ char __license[] SEC("license") = "GPL";
 
 void increment_received_packet_counter(pid_t pid, int size_of_new_packets)
 {
+    if (size_of_new_packets <= 0)
+    {
+        return;
+    }
+
     track *value = bpf_map_lookup_elem(&packet_stats, &pid);
 
     if (value)
@@ -38,6 +43,11 @@ void increment_received_packet_counter(pid_t pid, int size_of_new_packets)
 
 void increment_send_packet_counter(pid_t pid, int size_of_new_packets)
 {
+    if (size_of_new_packets <= 0)
+    {
+        return;
+    }
+
     track *value = bpf_map_lookup_elem(&packet_stats, &pid);
 
     if (value)
