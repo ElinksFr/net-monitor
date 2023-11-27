@@ -15,6 +15,7 @@ struct TrackingTick {
 
 pub struct BandwidthTracker {
     last_tick: SystemTime,
+    refresh_counter: u32,
     over_time_per_pid: HashMap<PID, HistoryBuffer<255, TrackingTick>>,
 }
 
@@ -22,6 +23,7 @@ impl BandwidthTracker {
     pub fn new() -> BandwidthTracker {
         BandwidthTracker {
             last_tick: SystemTime::now(),
+            refresh_counter: 0,
             over_time_per_pid: HashMap::new(),
         }
     }
@@ -29,22 +31,39 @@ impl BandwidthTracker {
     pub fn refresh_tick(&mut self, packet_stats: &Map) {
         let current_time = SystemTime::now();
 
-        packet_stats.keys().for_each(|key| {
+        if self.refresh_counter % 10 == 0 {
+            self.clear_dead_entries();
+        }
+
+        packet_stats
+            .keys()
+            .for_each(self.append_new_tick_to_history(packet_stats, current_time));
+
+        self.refresh_counter += 1;
+        self.last_tick = current_time;
+    }
+
+    fn append_new_tick_to_history<'a>(
+        &'a mut self,
+        packet_stats: &'a Map,
+        current_time: SystemTime,
+    ) -> impl FnMut(Vec<u8>) + 'a {
+        move |key| {
             let tmp = packet_stats
                 .lookup(&key, MapFlags::ANY)
-                .expect("err")
-                .expect("option");
+                .expect("error accessing map")
+                .expect("entry not found");
 
             let bytes_received = i32::from_ne_bytes(
                 tmp[..4]
                     .try_into()
-                    .expect("failed to convert the value to i32"),
+                    .expect("failed to convert bytes received the value to i32"),
             )
             .into();
             let bytes_send = i32::from_ne_bytes(
                 tmp[4..]
                     .try_into()
-                    .expect("failed to convert the value to i32"),
+                    .expect("failed to convert bytes send the value to i32"),
             )
             .into();
             let pid = i32::from_ne_bytes(key.try_into().expect("failed to convert key to i32"));
@@ -61,10 +80,8 @@ impl BandwidthTracker {
                 std::collections::hash_map::Entry::Vacant(vacant) => {
                     vacant.insert(HistoryBuffer::init(tick));
                 }
-            }
-        });
-
-        self.last_tick = current_time;
+            };
+        }
     }
 
     /// Returns `None` when the process did not interacted with the network since the monitoring started
@@ -114,5 +131,10 @@ impl BandwidthTracker {
                     _ => (*pid, BytesPerSecond::default(), BytesPerSecond::default()),
                 }
             })
+    }
+
+    fn clear_dead_entries(&mut self) {
+        self.over_time_per_pid
+            .retain(|_pid, buffer| buffer.last().at == self.last_tick);
     }
 }
