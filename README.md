@@ -49,3 +49,9 @@ The only tests are for the part that uses `unsafe`, the `HistoryBuffer` and the 
 ## vmlinux.h
 
 To regenerate: `bpftool btf dump file /sys/kernel/btf/vmlinux format c > src/bpf/vmlinux.h`
+
+## LICENSE
+
+This program is released under the GPLv3 license, see `LICENSE.txt`. I may not believe in open-source anymore but free-software maybe.
+
+Copyright Simon Andrieux 2023.

@@ -17,7 +17,7 @@ struct
     __type(value, track);
 } packet_stats SEC(".maps");
 
-char __license[] SEC("license") = "GPL";
+char __license[] SEC("license") = "GPLv3";
 #define TC_ACT_OK 0
 #define UDP_ACT_OK 0
 
