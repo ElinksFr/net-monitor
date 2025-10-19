@@ -55,7 +55,7 @@ impl Display for BytesPerSecond {
         write!(
             f,
             "{}/s",
-            Byte::from_u64(self.0 as u64).get_appropriate_unit(byte_unit::UnitType::Decimal)
+            Byte::from_u64(self.0).get_appropriate_unit(byte_unit::UnitType::Decimal)
         )
     }
 }

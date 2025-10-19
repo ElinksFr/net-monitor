@@ -33,23 +33,22 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
         .collect();
 
     let table_widths = [
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-        ];
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+    ];
 
-    let table = Table::new(rows, table_widths)
-        .header(Row::new(vec![
-            "pid",
-            "name",
-            "bytes send/s",
-            "bytes received/s",
-            "total bytes send",
-            "total bytes received",
-        ]));
+    let table = Table::new(rows, table_widths).header(Row::new(vec![
+        "pid",
+        "name",
+        "bytes send/s",
+        "bytes received/s",
+        "total bytes send",
+        "total bytes received",
+    ]));
 
     frame.render_widget(table, frame.area());
 }
