@@ -1,4 +1,7 @@
-use std::{collections::HashMap, error::Error};
+use std::{
+    collections::{BTreeMap, HashMap},
+    error::Error,
+};
 
 use libbpf_rs::Map;
 use procfs::{process::Process, ProcError};
@@ -10,6 +13,7 @@ use super::events::Event;
 pub struct Model<'a> {
     pub process_by_pid: HashMap<i32, Process>,
     pub bandwidth_tracker: BandwidthTracker,
+    pub datasets: BTreeMap<String, Vec<(f64, f64)>>,
     packet_stats: &'a Map<'a>,
 }
 
@@ -31,6 +35,7 @@ impl<'a> Model<'a> {
             process_by_pid,
             bandwidth_tracker,
             packet_stats,
+            datasets: BTreeMap::new(),
         })
     }
 
@@ -42,6 +47,21 @@ impl<'a> Model<'a> {
         self.bandwidth_tracker.refresh_tick(self.packet_stats);
         self.process_by_pid = get_process_data_by_pid()?;
 
+        self.datasets = self
+            .bandwidth_tracker
+            .get_throughput_over_duration_per_interface()
+            .into_iter()
+            .map(|(key, values)| {
+                (
+                    key,
+                    values
+                        .iter()
+                        .enumerate()
+                        .map(|(n, v)| (n as f64, f64::from(*v)))
+                        .collect(),
+                )
+            })
+            .collect();
         Ok(self)
     }
 }

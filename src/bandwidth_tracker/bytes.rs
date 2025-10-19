@@ -6,11 +6,11 @@ use std::{
 
 use byte_unit::Byte;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct NumberOfBytes(i32);
 
 #[derive(Clone, Copy, Default)]
-pub struct BytesPerSecond(u64);
+pub struct BytesPerSecond(f64);
 
 impl From<i32> for NumberOfBytes {
     fn from(value: i32) -> Self {
@@ -52,7 +52,13 @@ impl Display for NumberOfBytes {
 
 impl BytesPerSecond {
     pub fn new(bytes: NumberOfBytes, duration: Duration) -> BytesPerSecond {
-        BytesPerSecond(bytes.0 as u64 / duration.as_secs())
+        let duration_as_millis = duration.as_millis();
+
+        if duration_as_millis == 0 {
+            BytesPerSecond(0.0)
+        } else {
+            BytesPerSecond(bytes.0 as f64 / duration_as_millis as f64 * 1000.0)
+        }
     }
 }
 
@@ -61,7 +67,21 @@ impl Display for BytesPerSecond {
         write!(
             f,
             "{}/s",
-            Byte::from_u64(self.0).get_appropriate_unit(byte_unit::UnitType::Decimal)
+            Byte::from_f64(self.0)
+                .unwrap_or_default()
+                .get_appropriate_unit(byte_unit::UnitType::Decimal)
         )
+    }
+}
+
+impl From<NumberOfBytes> for f64 {
+    fn from(value: NumberOfBytes) -> Self {
+        value.0 as f64
+    }
+}
+
+impl From<BytesPerSecond> for f64 {
+    fn from(value: BytesPerSecond) -> Self {
+        value.0
     }
 }

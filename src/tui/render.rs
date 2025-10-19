@@ -1,8 +1,11 @@
 use std::time::Duration;
 
 use ratatui::{
+    layout::Layout,
     prelude::Constraint,
-    widgets::{Row, Table},
+    style::{Color, Stylize},
+    text::Line,
+    widgets::{Axis, Block, Chart, Dataset, GraphType, Row, Table},
     Frame,
 };
 
@@ -50,5 +53,30 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
         "total bytes received",
     ]));
 
-    frame.render_widget(table, frame.area());
+    let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
+
+    let chart = get_chart_of_global_thoughputs(state);
+    frame.render_widget(table, top);
+    frame.render_widget(chart, bottom);
+}
+
+fn get_chart_of_global_thoughputs<'a>(state: &'a Model<'a>) -> Chart<'a> {
+    let datasets = state
+        .datasets
+        .iter()
+        .zip([Color::Red, Color::Blue])
+        .map(|((interface, points), color)| {
+            Dataset::default()
+                .name(interface.clone())
+                .data(points)
+                .graph_type(GraphType::Line)
+                .style(color)
+        })
+        .collect();
+
+    Chart::new(datasets)
+        .block(Block::bordered().title(Line::from("Network Interface").bold().centered()))
+        .x_axis(Axis::default().title("X Axis").bounds([0.0, 255.0]))
+        .y_axis(Axis::default().title("Y Axis").bounds([0.0, 5000.0]))
+        .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)))
 }

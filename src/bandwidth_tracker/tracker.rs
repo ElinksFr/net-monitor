@@ -10,6 +10,7 @@ use super::history_buffer::HistoryBuffer;
 type PID = i32;
 type NetworkInterface = String;
 
+#[derive(Debug)]
 struct TrackingTick {
     received: NumberOfBytes,
     send: NumberOfBytes,
@@ -138,6 +139,32 @@ impl BandwidthTracker {
                     _ => (*pid, BytesPerSecond::default(), BytesPerSecond::default()),
                 }
             })
+    }
+
+    pub fn get_throughput_over_duration_per_interface(
+        &self,
+    ) -> HashMap<NetworkInterface, Vec<BytesPerSecond>> {
+        self.over_time_per_io_interface
+            .iter()
+            .map(|(interface, history)| {
+                if history.len() == 1 {
+                    return (interface.clone(), vec![]);
+                }
+                let mut points: Vec<_> = Vec::new();
+
+                for i in 0..history.len() - 1 {
+                    let (t2, t1) = (&history[i], &history[i + 1]);
+
+                    let instantaneous = BytesPerSecond::new(
+                        t1.received - t2.received,
+                        t1.at.duration_since(t2.at).unwrap(),
+                    );
+                    points.push(instantaneous);
+                }
+
+                (interface.clone(), points)
+            })
+            .collect()
     }
 
     fn clear_dead_entries(&mut self) {

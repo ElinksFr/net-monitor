@@ -42,6 +42,10 @@ impl<const N: usize, T> HistoryBuffer<N, T> {
             Some(unsafe { self.buffer[(self.start_index + index) % N].assume_init_ref() })
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.size
+    }
 }
 
 impl<const N: usize, T> Index<usize> for HistoryBuffer<N, T> {
