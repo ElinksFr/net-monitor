@@ -10,7 +10,7 @@ pub struct HistoryBuffer<const N: usize, T> {
 /// Ring buffer with at least one element
 impl<const N: usize, T> HistoryBuffer<N, T> {
     pub fn init(item: T) -> HistoryBuffer<N, T> {
-        let mut buffer = MaybeUninit::uninit_array();
+        let mut buffer = [const { MaybeUninit::uninit() }; N];
         buffer[0] = MaybeUninit::new(item);
         HistoryBuffer {
             buffer,

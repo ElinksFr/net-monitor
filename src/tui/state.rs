@@ -23,7 +23,7 @@ fn get_process_data_by_pid() -> Result<HashMap<i32, Process>, ProcError> {
 }
 
 impl<'a> Model<'a> {
-    pub fn init(packet_stats: &Map) -> Result<Model, Box<dyn Error>> {
+    pub fn init(packet_stats: &'a Map) -> Result<Model<'a>, Box<dyn Error>> {
         let process_by_pid = get_process_data_by_pid()?;
         let bandwidth_tracker = BandwidthTracker::new();
 

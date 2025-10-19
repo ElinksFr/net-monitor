@@ -22,7 +22,7 @@ The TUI is composed of a simple table build with [ratatui](https://ratatui.rs/).
 
 You need a recent-ish kernel but no idea how recent, tested with `5.15.0`.
 
-Some build dependecies via apt for Ubuntu `apt install clang gcc-multilib libelf1 libelf-dev zlib1g-dev`
+Some build dependecies via apt for Ubuntu `apt install clang gcc-multilib libelf1 libelf-dev zlib1g-dev pkg-config`
 
 
 Build the binary `cargo build --release` creates an executable in `./target/release/net-monitor`.
