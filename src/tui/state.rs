@@ -10,7 +10,7 @@ use super::events::Event;
 pub struct Model<'a> {
     pub process_by_pid: HashMap<i32, Process>,
     pub bandwidth_tracker: BandwidthTracker,
-    packet_stats: &'a Map,
+    packet_stats: &'a Map<'a>,
 }
 
 fn get_process_data_by_pid() -> Result<HashMap<i32, Process>, ProcError> {

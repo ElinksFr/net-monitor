@@ -4,18 +4,23 @@
 
 pub use self::imp::*;
 
+#[allow(renamed_and_removed_lints)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 #[allow(non_camel_case_types)]
-#[allow(clippy::transmute_ptr_to_ref)]
+#[allow(clippy::absolute_paths)]
 #[allow(clippy::upper_case_acronyms)]
+#[allow(clippy::zero_repeat_side_effects)]
 #[warn(single_use_lifetimes)]
 mod imp {
+    #[allow(unused_imports, clippy::wildcard_imports)]
+    use super::*;
     use libbpf_rs::libbpf_sys;
     use libbpf_rs::skel::OpenSkel;
     use libbpf_rs::skel::Skel;
     use libbpf_rs::skel::SkelBuilder;
-
+    use libbpf_rs::AsRawLibbpf as _;
+    use libbpf_rs::MapCore as _;
     fn build_skel_config(
     ) -> libbpf_rs::Result<libbpf_rs::__internal_skel::ObjectSkeletonConfig<'static>> {
         let mut builder = libbpf_rs::__internal_skel::ObjectSkeletonConfigBuilder::new(DATA);
@@ -27,8 +32,225 @@ mod imp {
             .prog("tcp_send_packet_size")
             .prog("udp_send_packet_size")
             .prog("stop_tracking_on_process_exit");
-
         builder.build()
+    }
+    pub struct OpenPacketSizeMaps<'obj> {
+        pub packet_stats: libbpf_rs::OpenMapMut<'obj>,
+        _phantom: std::marker::PhantomData<&'obj ()>,
+    }
+
+    impl<'obj> OpenPacketSizeMaps<'obj> {
+        #[allow(unused_variables)]
+        unsafe fn new(
+            config: &libbpf_rs::__internal_skel::ObjectSkeletonConfig<'_>,
+            object: &mut libbpf_rs::OpenObject,
+        ) -> libbpf_rs::Result<Self> {
+            let mut packet_stats = None;
+            let object = unsafe {
+                std::mem::transmute::<&mut libbpf_rs::OpenObject, &'obj mut libbpf_rs::OpenObject>(
+                    object,
+                )
+            };
+            #[allow(clippy::never_loop)]
+            for map in object.maps_mut() {
+                let name = map.name().to_str().ok_or_else(|| {
+                    libbpf_rs::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "map has invalid name",
+                    ))
+                })?;
+                #[allow(clippy::match_single_binding)]
+                match name {
+                    "packet_stats" => packet_stats = Some(map),
+                    _ => panic!("encountered unexpected map: `{name}`"),
+                }
+            }
+
+            let slf = Self {
+                packet_stats: packet_stats.expect("map `packet_stats` not present"),
+                _phantom: std::marker::PhantomData,
+            };
+            Ok(slf)
+        }
+    }
+    pub struct PacketSizeMaps<'obj> {
+        pub packet_stats: libbpf_rs::MapMut<'obj>,
+        _phantom: std::marker::PhantomData<&'obj ()>,
+    }
+
+    impl<'obj> PacketSizeMaps<'obj> {
+        #[allow(unused_variables)]
+        unsafe fn new(
+            config: &libbpf_rs::__internal_skel::ObjectSkeletonConfig<'_>,
+            object: &mut libbpf_rs::Object,
+        ) -> libbpf_rs::Result<Self> {
+            let mut packet_stats = None;
+            let object = unsafe {
+                std::mem::transmute::<&mut libbpf_rs::Object, &'obj mut libbpf_rs::Object>(object)
+            };
+            #[allow(clippy::never_loop)]
+            for map in object.maps_mut() {
+                let name = map.name().to_str().ok_or_else(|| {
+                    libbpf_rs::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "map has invalid name",
+                    ))
+                })?;
+                #[allow(clippy::match_single_binding)]
+                match name {
+                    "packet_stats" => packet_stats = Some(map),
+                    _ => panic!("encountered unexpected map: `{name}`"),
+                }
+            }
+
+            let slf = Self {
+                packet_stats: packet_stats.expect("map `packet_stats` not present"),
+                _phantom: std::marker::PhantomData,
+            };
+            Ok(slf)
+        }
+    }
+    pub struct OpenPacketSizeProgs<'obj> {
+        pub tcp_received_packet_size: libbpf_rs::OpenProgramMut<'obj>,
+        pub udp_received_packet_size: libbpf_rs::OpenProgramMut<'obj>,
+        pub tcp_send_packet_size: libbpf_rs::OpenProgramMut<'obj>,
+        pub udp_send_packet_size: libbpf_rs::OpenProgramMut<'obj>,
+        pub stop_tracking_on_process_exit: libbpf_rs::OpenProgramMut<'obj>,
+        _phantom: std::marker::PhantomData<&'obj ()>,
+    }
+
+    impl<'obj> OpenPacketSizeProgs<'obj> {
+        unsafe fn new(object: &mut libbpf_rs::OpenObject) -> libbpf_rs::Result<Self> {
+            let mut tcp_received_packet_size = None;
+            let mut udp_received_packet_size = None;
+            let mut tcp_send_packet_size = None;
+            let mut udp_send_packet_size = None;
+            let mut stop_tracking_on_process_exit = None;
+            let object = unsafe {
+                std::mem::transmute::<&mut libbpf_rs::OpenObject, &'obj mut libbpf_rs::OpenObject>(
+                    object,
+                )
+            };
+            for prog in object.progs_mut() {
+                let name = prog.name().to_str().ok_or_else(|| {
+                    libbpf_rs::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "prog has invalid name",
+                    ))
+                })?;
+                match name {
+                    "tcp_received_packet_size" => tcp_received_packet_size = Some(prog),
+                    "udp_received_packet_size" => udp_received_packet_size = Some(prog),
+                    "tcp_send_packet_size" => tcp_send_packet_size = Some(prog),
+                    "udp_send_packet_size" => udp_send_packet_size = Some(prog),
+                    "stop_tracking_on_process_exit" => stop_tracking_on_process_exit = Some(prog),
+                    _ => panic!("encountered unexpected prog: `{name}`"),
+                }
+            }
+
+            let slf = Self {
+                tcp_received_packet_size: tcp_received_packet_size
+                    .expect("prog `tcp_received_packet_size` not present"),
+                udp_received_packet_size: udp_received_packet_size
+                    .expect("prog `udp_received_packet_size` not present"),
+                tcp_send_packet_size: tcp_send_packet_size
+                    .expect("prog `tcp_send_packet_size` not present"),
+                udp_send_packet_size: udp_send_packet_size
+                    .expect("prog `udp_send_packet_size` not present"),
+                stop_tracking_on_process_exit: stop_tracking_on_process_exit
+                    .expect("prog `stop_tracking_on_process_exit` not present"),
+                _phantom: std::marker::PhantomData,
+            };
+            Ok(slf)
+        }
+    }
+    pub struct PacketSizeProgs<'obj> {
+        pub tcp_received_packet_size: libbpf_rs::ProgramMut<'obj>,
+        pub udp_received_packet_size: libbpf_rs::ProgramMut<'obj>,
+        pub tcp_send_packet_size: libbpf_rs::ProgramMut<'obj>,
+        pub udp_send_packet_size: libbpf_rs::ProgramMut<'obj>,
+        pub stop_tracking_on_process_exit: libbpf_rs::ProgramMut<'obj>,
+        _phantom: std::marker::PhantomData<&'obj ()>,
+    }
+
+    impl<'obj> PacketSizeProgs<'obj> {
+        #[allow(unused_variables)]
+        fn new(open_progs: OpenPacketSizeProgs<'obj>) -> Self {
+            Self {
+                tcp_received_packet_size: unsafe {
+                    libbpf_rs::ProgramMut::new_mut(
+                        open_progs
+                            .tcp_received_packet_size
+                            .as_libbpf_object()
+                            .as_mut(),
+                    )
+                },
+                udp_received_packet_size: unsafe {
+                    libbpf_rs::ProgramMut::new_mut(
+                        open_progs
+                            .udp_received_packet_size
+                            .as_libbpf_object()
+                            .as_mut(),
+                    )
+                },
+                tcp_send_packet_size: unsafe {
+                    libbpf_rs::ProgramMut::new_mut(
+                        open_progs.tcp_send_packet_size.as_libbpf_object().as_mut(),
+                    )
+                },
+                udp_send_packet_size: unsafe {
+                    libbpf_rs::ProgramMut::new_mut(
+                        open_progs.udp_send_packet_size.as_libbpf_object().as_mut(),
+                    )
+                },
+                stop_tracking_on_process_exit: unsafe {
+                    libbpf_rs::ProgramMut::new_mut(
+                        open_progs
+                            .stop_tracking_on_process_exit
+                            .as_libbpf_object()
+                            .as_mut(),
+                    )
+                },
+                _phantom: std::marker::PhantomData,
+            }
+        }
+    }
+    struct OwnedRef<'obj, O> {
+        object: Option<&'obj mut std::mem::MaybeUninit<O>>,
+    }
+
+    impl<'obj, O> OwnedRef<'obj, O> {
+        /// # Safety
+        /// The object has to be initialized.
+        unsafe fn new(object: &'obj mut std::mem::MaybeUninit<O>) -> Self {
+            Self {
+                object: Some(object),
+            }
+        }
+
+        fn as_ref(&self) -> &O {
+            // SAFETY: As per the contract during construction, the
+            //         object has to be initialized.
+            unsafe { self.object.as_ref().unwrap().assume_init_ref() }
+        }
+
+        fn as_mut(&mut self) -> &mut O {
+            // SAFETY: As per the contract during construction, the
+            //         object has to be initialized.
+            unsafe { self.object.as_mut().unwrap().assume_init_mut() }
+        }
+
+        fn take(mut self) -> &'obj mut std::mem::MaybeUninit<O> {
+            self.object.take().unwrap()
+        }
+    }
+
+    impl<O> Drop for OwnedRef<'_, O> {
+        fn drop(&mut self) {
+            if let Some(object) = &mut self.object {
+                unsafe { object.assume_init_drop() }
+            }
+        }
     }
 
     #[derive(Default)]
@@ -36,38 +258,66 @@ mod imp {
         pub obj_builder: libbpf_rs::ObjectBuilder,
     }
 
-    impl<'a> SkelBuilder<'a> for PacketSizeSkelBuilder {
-        type Output = OpenPacketSizeSkel<'a>;
-        fn open(mut self) -> libbpf_rs::Result<OpenPacketSizeSkel<'a>> {
-            let mut skel_config = build_skel_config()?;
-            let open_opts = self.obj_builder.opts(std::ptr::null());
+    impl<'obj> PacketSizeSkelBuilder {
+        fn open_opts_impl(
+            self,
+            open_opts: *const libbpf_sys::bpf_object_open_opts,
+            object: &'obj mut std::mem::MaybeUninit<libbpf_rs::OpenObject>,
+        ) -> libbpf_rs::Result<OpenPacketSizeSkel<'obj>> {
+            let skel_config = build_skel_config()?;
+            let skel_ptr = skel_config.as_libbpf_object();
 
             let ret =
-                unsafe { libbpf_sys::bpf_object__open_skeleton(skel_config.get(), &open_opts) };
+                unsafe { libbpf_sys::bpf_object__open_skeleton(skel_ptr.as_ptr(), open_opts) };
             if ret != 0 {
-                return Err(libbpf_rs::Error::System(-ret));
+                return Err(libbpf_rs::Error::from_raw_os_error(-ret));
             }
 
-            let obj = unsafe { libbpf_rs::OpenObject::from_ptr(skel_config.object_ptr())? };
+            // SAFETY: `skel_ptr` points to a valid object after the
+            //         open call.
+            let obj_ptr = unsafe { *skel_ptr.as_ref().obj };
+            // SANITY: `bpf_object__open_skeleton` should have
+            //         allocated the object.
+            let obj_ptr = std::ptr::NonNull::new(obj_ptr).unwrap();
+            // SAFETY: `obj_ptr` points to an opened object after
+            //         skeleton open.
+            let obj = unsafe { libbpf_rs::OpenObject::from_ptr(obj_ptr) };
+            let _obj = object.write(obj);
+            // SAFETY: We just wrote initialized data to `object`.
+            let mut obj_ref = unsafe { OwnedRef::new(object) };
 
-            Ok(OpenPacketSizeSkel { obj, skel_config })
+            #[allow(unused_mut)]
+            let mut skel = OpenPacketSizeSkel {
+                maps: unsafe { OpenPacketSizeMaps::new(&skel_config, obj_ref.as_mut())? },
+                progs: unsafe { OpenPacketSizeProgs::new(obj_ref.as_mut())? },
+                obj: obj_ref,
+                // SAFETY: Our `struct_ops` type contains only pointers,
+                //         which are allowed to be NULL.
+                // TODO: Generate and use a `Default` representation
+                //       instead, to cut down on unsafe code.
+                struct_ops: unsafe { std::mem::zeroed() },
+                skel_config,
+            };
+
+            Ok(skel)
+        }
+    }
+
+    impl<'obj> SkelBuilder<'obj> for PacketSizeSkelBuilder {
+        type Output = OpenPacketSizeSkel<'obj>;
+        fn open(
+            self,
+            object: &'obj mut std::mem::MaybeUninit<libbpf_rs::OpenObject>,
+        ) -> libbpf_rs::Result<OpenPacketSizeSkel<'obj>> {
+            self.open_opts_impl(std::ptr::null(), object)
         }
 
         fn open_opts(
             self,
             open_opts: libbpf_sys::bpf_object_open_opts,
-        ) -> libbpf_rs::Result<OpenPacketSizeSkel<'a>> {
-            let mut skel_config = build_skel_config()?;
-
-            let ret =
-                unsafe { libbpf_sys::bpf_object__open_skeleton(skel_config.get(), &open_opts) };
-            if ret != 0 {
-                return Err(libbpf_rs::Error::System(-ret));
-            }
-
-            let obj = unsafe { libbpf_rs::OpenObject::from_ptr(skel_config.object_ptr())? };
-
-            Ok(OpenPacketSizeSkel { obj, skel_config })
+            object: &'obj mut std::mem::MaybeUninit<libbpf_rs::OpenObject>,
+        ) -> libbpf_rs::Result<OpenPacketSizeSkel<'obj>> {
+            self.open_opts_impl(&open_opts, object)
         }
 
         fn object_builder(&self) -> &libbpf_rs::ObjectBuilder {
@@ -78,206 +328,147 @@ mod imp {
         }
     }
 
-    pub struct OpenPacketSizeMaps<'a> {
-        inner: &'a libbpf_rs::OpenObject,
-    }
+    #[derive(Debug, Clone)]
+    #[repr(C)]
+    pub struct StructOps {}
 
-    impl OpenPacketSizeMaps<'_> {
-        pub fn packet_stats(&self) -> &libbpf_rs::OpenMap {
-            self.inner.map("packet_stats").unwrap()
+    impl StructOps {}
+    pub mod types {
+        #[allow(unused_imports)]
+        use super::*;
+        #[derive(Debug, Default, Copy, Clone)]
+        #[repr(C)]
+        pub struct __anon_1 {
+            pub received: u32,
+            pub send: u32,
+        }
+        #[derive(Debug, Copy, Clone)]
+        #[repr(C)]
+        pub struct __anon_2 {
+            pub r#type: *mut [i32; 9],
+            pub max_entries: *mut [i32; 5096],
+            pub key: *mut i32,
+            pub value: *mut __anon_1,
+        }
+        impl Default for __anon_2 {
+            fn default() -> Self {
+                Self {
+                    r#type: std::ptr::null_mut(),
+                    max_entries: std::ptr::null_mut(),
+                    key: std::ptr::null_mut(),
+                    value: std::ptr::null_mut(),
+                }
+            }
+        }
+        #[derive(Debug, Default, Copy, Clone)]
+        #[repr(C)]
+        pub struct pt_regs {
+            pub r15: u64,
+            pub r14: u64,
+            pub r13: u64,
+            pub r12: u64,
+            pub bp: u64,
+            pub bx: u64,
+            pub r11: u64,
+            pub r10: u64,
+            pub r9: u64,
+            pub r8: u64,
+            pub ax: u64,
+            pub cx: u64,
+            pub dx: u64,
+            pub si: u64,
+            pub di: u64,
+            pub orig_ax: u64,
+            pub ip: u64,
+            pub cs: u64,
+            pub flags: u64,
+            pub sp: u64,
+            pub ss: u64,
+        }
+        #[derive(Debug, Default, Copy, Clone)]
+        #[repr(C)]
+        pub struct trace_event_raw_sched_process_template {
+            pub ent: trace_entry,
+            pub comm: [i8; 16],
+            pub pid: i32,
+            pub prio: i32,
+            pub __data: [i8; 0],
+        }
+        #[derive(Debug, Default, Copy, Clone)]
+        #[repr(C)]
+        pub struct trace_entry {
+            pub r#type: u16,
+            pub flags: u8,
+            pub preempt_count: u8,
+            pub pid: i32,
+        }
+        #[derive(Debug, Copy, Clone)]
+        #[repr(C)]
+        pub struct license {
+            pub __license: [i8; 6],
+        }
+        #[derive(Debug, Copy, Clone)]
+        #[repr(C)]
+        pub struct maps {
+            pub packet_stats: __anon_2,
         }
     }
-
-    pub struct OpenPacketSizeMapsMut<'a> {
-        inner: &'a mut libbpf_rs::OpenObject,
+    pub struct OpenPacketSizeSkel<'obj> {
+        obj: OwnedRef<'obj, libbpf_rs::OpenObject>,
+        pub maps: OpenPacketSizeMaps<'obj>,
+        pub progs: OpenPacketSizeProgs<'obj>,
+        pub struct_ops: StructOps,
+        skel_config: libbpf_rs::__internal_skel::ObjectSkeletonConfig<'obj>,
     }
 
-    impl OpenPacketSizeMapsMut<'_> {
-        pub fn packet_stats(&mut self) -> &mut libbpf_rs::OpenMap {
-            self.inner.map_mut("packet_stats").unwrap()
-        }
-    }
+    impl<'obj> OpenSkel<'obj> for OpenPacketSizeSkel<'obj> {
+        type Output = PacketSizeSkel<'obj>;
+        fn load(self) -> libbpf_rs::Result<PacketSizeSkel<'obj>> {
+            let skel_ptr = self.skel_config.as_libbpf_object().as_ptr();
 
-    pub struct OpenPacketSizeProgs<'a> {
-        inner: &'a libbpf_rs::OpenObject,
-    }
-
-    impl OpenPacketSizeProgs<'_> {
-        pub fn tcp_received_packet_size(&self) -> &libbpf_rs::OpenProgram {
-            self.inner.prog("tcp_received_packet_size").unwrap()
-        }
-
-        pub fn udp_received_packet_size(&self) -> &libbpf_rs::OpenProgram {
-            self.inner.prog("udp_received_packet_size").unwrap()
-        }
-
-        pub fn tcp_send_packet_size(&self) -> &libbpf_rs::OpenProgram {
-            self.inner.prog("tcp_send_packet_size").unwrap()
-        }
-
-        pub fn udp_send_packet_size(&self) -> &libbpf_rs::OpenProgram {
-            self.inner.prog("udp_send_packet_size").unwrap()
-        }
-
-        pub fn stop_tracking_on_process_exit(&self) -> &libbpf_rs::OpenProgram {
-            self.inner.prog("stop_tracking_on_process_exit").unwrap()
-        }
-    }
-
-    pub struct OpenPacketSizeProgsMut<'a> {
-        inner: &'a mut libbpf_rs::OpenObject,
-    }
-
-    impl OpenPacketSizeProgsMut<'_> {
-        pub fn tcp_received_packet_size(&mut self) -> &mut libbpf_rs::OpenProgram {
-            self.inner.prog_mut("tcp_received_packet_size").unwrap()
-        }
-
-        pub fn udp_received_packet_size(&mut self) -> &mut libbpf_rs::OpenProgram {
-            self.inner.prog_mut("udp_received_packet_size").unwrap()
-        }
-
-        pub fn tcp_send_packet_size(&mut self) -> &mut libbpf_rs::OpenProgram {
-            self.inner.prog_mut("tcp_send_packet_size").unwrap()
-        }
-
-        pub fn udp_send_packet_size(&mut self) -> &mut libbpf_rs::OpenProgram {
-            self.inner.prog_mut("udp_send_packet_size").unwrap()
-        }
-
-        pub fn stop_tracking_on_process_exit(&mut self) -> &mut libbpf_rs::OpenProgram {
-            self.inner
-                .prog_mut("stop_tracking_on_process_exit")
-                .unwrap()
-        }
-    }
-
-    pub struct OpenPacketSizeSkel<'a> {
-        pub obj: libbpf_rs::OpenObject,
-        skel_config: libbpf_rs::__internal_skel::ObjectSkeletonConfig<'a>,
-    }
-
-    impl<'a> OpenSkel for OpenPacketSizeSkel<'a> {
-        type Output = PacketSizeSkel<'a>;
-        fn load(mut self) -> libbpf_rs::Result<PacketSizeSkel<'a>> {
-            let ret = unsafe { libbpf_sys::bpf_object__load_skeleton(self.skel_config.get()) };
+            let ret = unsafe { libbpf_sys::bpf_object__load_skeleton(skel_ptr) };
             if ret != 0 {
-                return Err(libbpf_rs::Error::System(-ret));
+                return Err(libbpf_rs::Error::from_raw_os_error(-ret));
             }
 
-            let obj = unsafe { libbpf_rs::Object::from_ptr(self.obj.take_ptr())? };
+            let obj_ref = self.obj.take();
+            let open_obj = std::mem::replace(obj_ref, std::mem::MaybeUninit::uninit());
+            // SAFETY: `open_obj` is guaranteed to be properly
+            //         initialized as it came from an `OwnedRef`.
+            let obj_ptr = unsafe { open_obj.assume_init().take_ptr() };
+            // SAFETY: `obj_ptr` points to a loaded object after
+            //         skeleton load.
+            let obj = unsafe { libbpf_rs::Object::from_ptr(obj_ptr) };
+            // SAFETY: `OpenObject` and `Object` are guaranteed to
+            //         have the same memory layout.
+            let obj_ref = unsafe {
+                std::mem::transmute::<
+                    &'obj mut std::mem::MaybeUninit<libbpf_rs::OpenObject>,
+                    &'obj mut std::mem::MaybeUninit<libbpf_rs::Object>,
+                >(obj_ref)
+            };
+            let _obj = obj_ref.write(obj);
+            // SAFETY: We just wrote initialized data to `obj_ref`.
+            let mut obj_ref = unsafe { OwnedRef::new(obj_ref) };
 
             Ok(PacketSizeSkel {
-                obj,
+                maps: unsafe { PacketSizeMaps::new(&self.skel_config, obj_ref.as_mut())? },
+                progs: PacketSizeProgs::new(self.progs),
+                obj: obj_ref,
+                struct_ops: self.struct_ops,
                 skel_config: self.skel_config,
                 links: PacketSizeLinks::default(),
             })
         }
 
         fn open_object(&self) -> &libbpf_rs::OpenObject {
-            &self.obj
+            self.obj.as_ref()
         }
 
         fn open_object_mut(&mut self) -> &mut libbpf_rs::OpenObject {
-            &mut self.obj
+            self.obj.as_mut()
         }
     }
-    impl OpenPacketSizeSkel<'_> {
-        pub fn progs(&self) -> OpenPacketSizeProgs<'_> {
-            OpenPacketSizeProgs { inner: &self.obj }
-        }
-
-        pub fn progs_mut(&mut self) -> OpenPacketSizeProgsMut<'_> {
-            OpenPacketSizeProgsMut {
-                inner: &mut self.obj,
-            }
-        }
-
-        pub fn maps(&self) -> OpenPacketSizeMaps<'_> {
-            OpenPacketSizeMaps { inner: &self.obj }
-        }
-
-        pub fn maps_mut(&mut self) -> OpenPacketSizeMapsMut<'_> {
-            OpenPacketSizeMapsMut {
-                inner: &mut self.obj,
-            }
-        }
-    }
-
-    pub struct PacketSizeMaps<'a> {
-        inner: &'a libbpf_rs::Object,
-    }
-
-    impl PacketSizeMaps<'_> {
-        pub fn packet_stats(&self) -> &libbpf_rs::Map {
-            self.inner.map("packet_stats").unwrap()
-        }
-    }
-
-    pub struct PacketSizeMapsMut<'a> {
-        inner: &'a mut libbpf_rs::Object,
-    }
-
-    impl PacketSizeMapsMut<'_> {
-        pub fn packet_stats(&mut self) -> &mut libbpf_rs::Map {
-            self.inner.map_mut("packet_stats").unwrap()
-        }
-    }
-
-    pub struct PacketSizeProgs<'a> {
-        inner: &'a libbpf_rs::Object,
-    }
-
-    impl PacketSizeProgs<'_> {
-        pub fn tcp_received_packet_size(&self) -> &libbpf_rs::Program {
-            self.inner.prog("tcp_received_packet_size").unwrap()
-        }
-
-        pub fn udp_received_packet_size(&self) -> &libbpf_rs::Program {
-            self.inner.prog("udp_received_packet_size").unwrap()
-        }
-
-        pub fn tcp_send_packet_size(&self) -> &libbpf_rs::Program {
-            self.inner.prog("tcp_send_packet_size").unwrap()
-        }
-
-        pub fn udp_send_packet_size(&self) -> &libbpf_rs::Program {
-            self.inner.prog("udp_send_packet_size").unwrap()
-        }
-
-        pub fn stop_tracking_on_process_exit(&self) -> &libbpf_rs::Program {
-            self.inner.prog("stop_tracking_on_process_exit").unwrap()
-        }
-    }
-
-    pub struct PacketSizeProgsMut<'a> {
-        inner: &'a mut libbpf_rs::Object,
-    }
-
-    impl PacketSizeProgsMut<'_> {
-        pub fn tcp_received_packet_size(&mut self) -> &mut libbpf_rs::Program {
-            self.inner.prog_mut("tcp_received_packet_size").unwrap()
-        }
-
-        pub fn udp_received_packet_size(&mut self) -> &mut libbpf_rs::Program {
-            self.inner.prog_mut("udp_received_packet_size").unwrap()
-        }
-
-        pub fn tcp_send_packet_size(&mut self) -> &mut libbpf_rs::Program {
-            self.inner.prog_mut("tcp_send_packet_size").unwrap()
-        }
-
-        pub fn udp_send_packet_size(&mut self) -> &mut libbpf_rs::Program {
-            self.inner.prog_mut("udp_send_packet_size").unwrap()
-        }
-
-        pub fn stop_tracking_on_process_exit(&mut self) -> &mut libbpf_rs::Program {
-            self.inner
-                .prog_mut("stop_tracking_on_process_exit")
-                .unwrap()
-        }
-    }
-
     #[derive(Default)]
     pub struct PacketSizeLinks {
         pub tcp_received_packet_size: Option<libbpf_rs::Link>,
@@ -286,79 +477,64 @@ mod imp {
         pub udp_send_packet_size: Option<libbpf_rs::Link>,
         pub stop_tracking_on_process_exit: Option<libbpf_rs::Link>,
     }
-
-    pub struct PacketSizeSkel<'a> {
-        pub obj: libbpf_rs::Object,
-        skel_config: libbpf_rs::__internal_skel::ObjectSkeletonConfig<'a>,
+    pub struct PacketSizeSkel<'obj> {
+        obj: OwnedRef<'obj, libbpf_rs::Object>,
+        pub maps: PacketSizeMaps<'obj>,
+        pub progs: PacketSizeProgs<'obj>,
+        struct_ops: StructOps,
+        skel_config: libbpf_rs::__internal_skel::ObjectSkeletonConfig<'obj>,
         pub links: PacketSizeLinks,
     }
 
     unsafe impl Send for PacketSizeSkel<'_> {}
     unsafe impl Sync for PacketSizeSkel<'_> {}
 
-    impl Skel for PacketSizeSkel<'_> {
+    impl<'obj> Skel<'obj> for PacketSizeSkel<'obj> {
         fn object(&self) -> &libbpf_rs::Object {
-            &self.obj
+            self.obj.as_ref()
         }
 
         fn object_mut(&mut self) -> &mut libbpf_rs::Object {
-            &mut self.obj
+            self.obj.as_mut()
         }
-
         fn attach(&mut self) -> libbpf_rs::Result<()> {
-            let ret = unsafe { libbpf_sys::bpf_object__attach_skeleton(self.skel_config.get()) };
+            let skel_ptr = self.skel_config.as_libbpf_object().as_ptr();
+            let ret = unsafe { libbpf_sys::bpf_object__attach_skeleton(skel_ptr) };
             if ret != 0 {
-                return Err(libbpf_rs::Error::System(-ret));
+                return Err(libbpf_rs::Error::from_raw_os_error(-ret));
             }
 
             self.links = PacketSizeLinks {
-                tcp_received_packet_size: (|| {
-                    Ok(core::ptr::NonNull::new(self.skel_config.prog_link_ptr(0)?)
-                        .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }))
-                })()?,
-                udp_received_packet_size: (|| {
-                    Ok(core::ptr::NonNull::new(self.skel_config.prog_link_ptr(1)?)
-                        .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }))
-                })()?,
-                tcp_send_packet_size: (|| {
-                    Ok(core::ptr::NonNull::new(self.skel_config.prog_link_ptr(2)?)
-                        .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }))
-                })()?,
-                udp_send_packet_size: (|| {
-                    Ok(core::ptr::NonNull::new(self.skel_config.prog_link_ptr(3)?)
-                        .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }))
-                })()?,
-                stop_tracking_on_process_exit: (|| {
-                    Ok(core::ptr::NonNull::new(self.skel_config.prog_link_ptr(4)?)
-                        .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }))
-                })()?,
+                tcp_received_packet_size: core::ptr::NonNull::new(
+                    self.skel_config.prog_link_ptr(0)?,
+                )
+                .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }),
+                udp_received_packet_size: core::ptr::NonNull::new(
+                    self.skel_config.prog_link_ptr(1)?,
+                )
+                .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }),
+                tcp_send_packet_size: core::ptr::NonNull::new(self.skel_config.prog_link_ptr(2)?)
+                    .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }),
+                udp_send_packet_size: core::ptr::NonNull::new(self.skel_config.prog_link_ptr(3)?)
+                    .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }),
+                stop_tracking_on_process_exit: core::ptr::NonNull::new(
+                    self.skel_config.prog_link_ptr(4)?,
+                )
+                .map(|ptr| unsafe { libbpf_rs::Link::from_ptr(ptr) }),
             };
 
             Ok(())
         }
     }
     impl PacketSizeSkel<'_> {
-        pub fn progs(&self) -> PacketSizeProgs<'_> {
-            PacketSizeProgs { inner: &self.obj }
+        pub fn struct_ops_raw(&self) -> *const StructOps {
+            &self.struct_ops
         }
 
-        pub fn progs_mut(&mut self) -> PacketSizeProgsMut<'_> {
-            PacketSizeProgsMut {
-                inner: &mut self.obj,
-            }
-        }
-
-        pub fn maps(&self) -> PacketSizeMaps<'_> {
-            PacketSizeMaps { inner: &self.obj }
-        }
-
-        pub fn maps_mut(&mut self) -> PacketSizeMapsMut<'_> {
-            PacketSizeMapsMut {
-                inner: &mut self.obj,
-            }
+        pub fn struct_ops(&self) -> &StructOps {
+            &self.struct_ops
         }
     }
-
     const DATA: &[u8] = &[
         127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 247, 0, 1, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0,

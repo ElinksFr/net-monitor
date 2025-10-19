@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 use std::{collections::HashMap, time::Duration};
 
-use libbpf_rs::{Map, MapFlags};
+use libbpf_rs::{Map, MapCore, MapFlags};
 
 use super::bytes::{BytesPerSecond, NumberOfBytes};
 use super::history_buffer::HistoryBuffer;

@@ -5,7 +5,7 @@ use crossterm::{
 };
 use libbpf_rs::skel::{OpenSkel, SkelBuilder};
 use ratatui::{prelude::CrosstermBackend, Terminal};
-use std::{error::Error, io::stdout};
+use std::{error::Error, io::stdout, mem::MaybeUninit};
 use tui::{events::Event, render::draw_state, state::Model};
 
 mod bandwidth_tracker;
@@ -15,14 +15,15 @@ mod packet_size;
 mod tui;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let opened_skel = packet_size::PacketSizeSkelBuilder::default().open()?;
+    let mut open_object = MaybeUninit::uninit();
+    let opened_skel = packet_size::PacketSizeSkelBuilder::default().open(&mut open_object)?;
     let mut skel = opened_skel.load()?;
     let _probs = LoadedProb::load_ebpf_monitoring_probs(&mut skel)?;
 
-    let map_collection = skel.maps();
-    let packet_stats = map_collection.packet_stats();
+    let map_collection = skel.maps;
+    let packet_stats = map_collection.packet_stats;
 
-    let mut state_model = Model::init(packet_stats)?;
+    let mut state_model = Model::init(&packet_stats)?;
 
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
