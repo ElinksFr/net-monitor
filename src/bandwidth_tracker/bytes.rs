@@ -39,7 +39,7 @@ impl Display for NumberOfBytes {
         write!(
             f,
             "{}",
-            Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
+            Byte::from_u64(self.0 as u64).get_appropriate_unit(byte_unit::UnitType::Decimal)
         )
     }
 }
@@ -55,7 +55,7 @@ impl Display for BytesPerSecond {
         write!(
             f,
             "{}/s",
-            Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
+            Byte::from_u64(self.0 as u64).get_appropriate_unit(byte_unit::UnitType::Decimal)
         )
     }
 }
