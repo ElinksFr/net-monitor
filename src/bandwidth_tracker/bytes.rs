@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     ops::{Add, Sub},
     time::Duration,
 };
@@ -33,9 +34,10 @@ impl Sub for NumberOfBytes {
     }
 }
 
-impl ToString for NumberOfBytes {
-    fn to_string(&self) -> String {
-        format!(
+impl Display for NumberOfBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}",
             Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
         )
@@ -48,9 +50,10 @@ impl BytesPerSecond {
     }
 }
 
-impl ToString for BytesPerSecond {
-    fn to_string(&self) -> String {
-        format!(
+impl Display for BytesPerSecond {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}/s",
             Byte::from_bytes(self.0 as u128).get_appropriate_unit(false)
         )

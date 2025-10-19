@@ -5,6 +5,8 @@ use libbpf_rs::{Map, MapFlags};
 
 use super::bytes::{BytesPerSecond, NumberOfBytes};
 use super::history_buffer::HistoryBuffer;
+
+#[allow(clippy::upper_case_acronyms)]
 type PID = i32;
 
 struct TrackingTick {
@@ -31,7 +33,7 @@ impl BandwidthTracker {
     pub fn refresh_tick(&mut self, packet_stats: &Map) {
         let current_time = SystemTime::now();
 
-        if self.refresh_counter % 10 == 0 {
+        if self.refresh_counter.is_multiple_of(10) {
             self.clear_dead_entries();
         }
 

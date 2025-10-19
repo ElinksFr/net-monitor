@@ -35,7 +35,7 @@ impl<const N: usize, T> HistoryBuffer<N, T> {
         }
     }
 
-    fn get<'a>(&'a self, index: usize) -> Option<&'a T> {
+    fn get(&self, index: usize) -> Option<&T> {
         if index > self.size {
             None
         } else {

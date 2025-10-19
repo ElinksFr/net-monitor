@@ -9,12 +9,9 @@ fn is_shutdown_event(key_event: crossterm::event::KeyEvent) -> bool {
         false
     } else if matches!(key_event.code, crossterm::event::KeyCode::Char('q')) {
         true
-    } else if matches!(key_event.code, crossterm::event::KeyCode::Char('c'))
-        && matches!(key_event.modifiers, crossterm::event::KeyModifiers::CONTROL)
-    {
-        true
     } else {
-        false
+        matches!(key_event.code, crossterm::event::KeyCode::Char('c'))
+            && matches!(key_event.modifiers, crossterm::event::KeyModifiers::CONTROL)
     }
 }
 #[derive(PartialEq, Eq)]
