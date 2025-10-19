@@ -32,7 +32,16 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
         })
         .collect();
 
-    let table = Table::new(rows)
+    let table_widths = [
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+        ];
+
+    let table = Table::new(rows, table_widths)
         .header(Row::new(vec![
             "pid",
             "name",
@@ -40,15 +49,7 @@ pub fn draw_state(frame: &mut Frame, state: &Model) {
             "bytes received/s",
             "total bytes send",
             "total bytes received",
-        ]))
-        .widths(&[
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-        ]);
+        ]));
 
-    frame.render_widget(table, frame.size());
+    frame.render_widget(table, frame.area());
 }

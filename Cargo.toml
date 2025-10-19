@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 byte-unit = "5.1.6"
-crossterm = "0.27.0"
+crossterm = "0.29.0"
 libbpf-rs = "0.25.0"
 procfs = "0.18.0"
-ratatui = "0.24.0"
+ratatui = "0.29.0"
 
 [build-dependencies]
 libbpf-cargo = "0.25.0"
