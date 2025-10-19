@@ -8,6 +8,7 @@ use super::history_buffer::HistoryBuffer;
 
 #[allow(clippy::upper_case_acronyms)]
 type PID = i32;
+type NetworkInterface = String;
 
 struct TrackingTick {
     received: NumberOfBytes,
@@ -19,6 +20,7 @@ pub struct BandwidthTracker {
     last_tick: SystemTime,
     refresh_counter: u32,
     over_time_per_pid: HashMap<PID, HistoryBuffer<255, TrackingTick>>,
+    over_time_per_io_interface: HashMap<NetworkInterface, HistoryBuffer<255, TrackingTick>>,
 }
 
 impl BandwidthTracker {
@@ -27,6 +29,7 @@ impl BandwidthTracker {
             last_tick: SystemTime::now(),
             refresh_counter: 0,
             over_time_per_pid: HashMap::new(),
+            over_time_per_io_interface: HashMap::new(),
         }
     }
 
@@ -40,6 +43,8 @@ impl BandwidthTracker {
         packet_stats
             .keys()
             .for_each(self.append_new_tick_to_history(packet_stats, current_time));
+
+        self.append_new_tick_to_interface_history(current_time);
 
         self.refresh_counter += 1;
         self.last_tick = current_time;
@@ -138,5 +143,28 @@ impl BandwidthTracker {
     fn clear_dead_entries(&mut self) {
         self.over_time_per_pid
             .retain(|_pid, buffer| buffer.last().at == self.last_tick);
+
+        self.over_time_per_io_interface
+            .retain(|_interface, buffer| buffer.last().at == self.last_tick);
+    }
+
+    fn append_new_tick_to_interface_history(&mut self, current_time: SystemTime) {
+        let status = procfs::net::dev_status().unwrap();
+
+        status.iter().for_each(|(interface, value)| {
+            let tick = TrackingTick {
+                received: value.recv_bytes.into(),
+                send: value.sent_bytes.into(),
+                at: current_time,
+            };
+            match self.over_time_per_io_interface.entry(interface.clone()) {
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    entry.get_mut().push(tick);
+                }
+                std::collections::hash_map::Entry::Vacant(vacant) => {
+                    vacant.insert(HistoryBuffer::init(tick));
+                }
+            };
+        });
     }
 }

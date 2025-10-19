@@ -18,6 +18,12 @@ impl From<i32> for NumberOfBytes {
     }
 }
 
+impl From<u64> for NumberOfBytes {
+    fn from(value: u64) -> Self {
+        NumberOfBytes(value as i32)
+    }
+}
+
 impl Add for NumberOfBytes {
     type Output = Self;
 
