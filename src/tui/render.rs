@@ -82,15 +82,22 @@ fn get_chart_of_global_thoughputs<'a>(state: &'a Model<'a>) -> Chart<'a> {
     let y_max = state
         .datasets
         .iter()
-        .map(|(_, v)| v.iter())
-        .flatten()
+        .flat_map(|(_, v)| v.iter())
         .map(|item| item.1)
         .reduce(f64::max)
         .unwrap_or(0.);
 
+    let x_max = state
+        .datasets
+        .values()
+        .map(|v| v.len())
+        .max()
+        .unwrap_or_default()
+        .min(255) as f64;
+
     Chart::new(datasets)
         .block(Block::bordered().title(Line::from("Network Interfaces").bold().centered()))
-        .x_axis(Axis::default().title("X Axis").bounds([0.0, 255.0]))
+        .x_axis(Axis::default().title("X Axis").bounds([0.0, x_max]))
         .y_axis(Axis::default().title("Y Axis").bounds([0.0, y_max]))
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)))
 }
