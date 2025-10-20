@@ -12,6 +12,7 @@ use std::{
     error::Error,
     io::{self, stdout},
     mem::MaybeUninit,
+    time::Duration,
 };
 use tui::{events::Event, render::draw_state, state::Model};
 
@@ -31,12 +32,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps;
     let packet_stats = map_collection.packet_stats;
 
-    let mut state_model = Model::init(&packet_stats)?;
+    let refresh_rate = Duration::from_millis(250);
+    let mut state_model = Model::init(&packet_stats, refresh_rate)?;
     let mut terminal = init_tui()?;
 
     loop {
         terminal.draw(|frame| draw_state(frame, &state_model))?;
-        if crossterm::event::poll(std::time::Duration::from_millis(250))?
+        if crossterm::event::poll(state_model.refresh_rate)?
             && Event::try_from(crossterm::event::read()?) == Ok(Event::Quit)
         {
             break;

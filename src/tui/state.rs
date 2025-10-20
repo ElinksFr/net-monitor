@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
     error::Error,
+    time::Duration,
 };
 
 use libbpf_rs::Map;
@@ -14,6 +15,7 @@ pub struct Model<'a> {
     pub process_by_pid: HashMap<i32, Process>,
     pub bandwidth_tracker: BandwidthTracker,
     pub datasets: BTreeMap<String, Vec<(f64, f64)>>,
+    pub refresh_rate: Duration,
     packet_stats: &'a Map<'a>,
 }
 
@@ -27,7 +29,10 @@ fn get_process_data_by_pid() -> Result<HashMap<i32, Process>, ProcError> {
 }
 
 impl<'a> Model<'a> {
-    pub fn init(packet_stats: &'a Map) -> Result<Model<'a>, Box<dyn Error>> {
+    pub fn init(
+        packet_stats: &'a Map,
+        refresh_rate: Duration,
+    ) -> Result<Model<'a>, Box<dyn Error>> {
         let process_by_pid = get_process_data_by_pid()?;
         let bandwidth_tracker = BandwidthTracker::new();
 
@@ -36,6 +41,7 @@ impl<'a> Model<'a> {
             bandwidth_tracker,
             packet_stats,
             datasets: BTreeMap::new(),
+            refresh_rate,
         })
     }
 
