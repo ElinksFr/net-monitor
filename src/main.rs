@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let map_collection = skel.maps;
     let packet_stats = map_collection.packet_stats;
 
-    let refresh_rate = Duration::from_millis(250);
+    let refresh_rate = Duration::from_millis(160);
     let mut state_model = Model::init(&packet_stats, refresh_rate)?;
     let mut terminal = init_tui()?;
 
