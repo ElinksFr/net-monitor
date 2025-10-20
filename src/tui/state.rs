@@ -5,7 +5,7 @@ use std::{
 };
 
 use libbpf_rs::Map;
-use procfs::{process::Process, ProcError};
+use procfs::process::Process;
 
 use crate::bandwidth_tracker::tracker::BandwidthTracker;
 
@@ -19,13 +19,11 @@ pub struct Model<'a> {
     packet_stats: &'a Map<'a>,
 }
 
-fn get_process_data_by_pid() -> Result<HashMap<i32, Process>, ProcError> {
-    Ok(procfs::process::all_processes()?
-        .map(|process_result| {
-            let process = process_result.unwrap();
-            (process.pid, process)
-        })
-        .collect())
+fn get_process_data_by_pid() -> HashMap<i32, Process> {
+    procfs::process::all_processes()
+        .expect("cannot read /proc")
+        .filter_map(|process_result| process_result.map(|process| (process.pid, process)).ok())
+        .collect()
 }
 
 impl<'a> Model<'a> {
@@ -33,7 +31,7 @@ impl<'a> Model<'a> {
         packet_stats: &'a Map,
         refresh_rate: Duration,
     ) -> Result<Model<'a>, Box<dyn Error>> {
-        let process_by_pid = get_process_data_by_pid()?;
+        let process_by_pid = get_process_data_by_pid();
         let bandwidth_tracker = BandwidthTracker::new();
 
         Ok(Model {
@@ -51,7 +49,7 @@ impl<'a> Model<'a> {
         }
 
         self.bandwidth_tracker.refresh_tick(self.packet_stats);
-        self.process_by_pid = get_process_data_by_pid()?;
+        self.process_by_pid = get_process_data_by_pid();
 
         self.datasets = self
             .bandwidth_tracker
